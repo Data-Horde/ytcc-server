@@ -187,11 +187,19 @@ def reopenavailability():
     return 'Success'
 
 def gen_stats():
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
+
     result = {}
     c.execute("select avg(strftime('%s',BatchStatusUpdateTime) -strftime('%s',AssignedTime) ) from main where BatchStatus=2")
     result['average_batch_time_seconds'] = c.fetchone()[0]
-    c.execute("select avg(strftime('%s',BatchStatusUpdateTime) -strftime('%s',AssignedTime) ) from main where BatchStatus=2 AND BatchContent IS NULL")
-    result['average_nonexclusion_batch_time_seconds'] = c.fetchone()[0]
+    try:
+        c.execute("select avg(strftime('%s',BatchStatusUpdateTime) -strftime('%s',AssignedTime) ) from main where BatchStatus=2 AND BatchContent IS NULL")
+        result['average_nonexclusion_batch_time_seconds'] = c.fetchone()[0]
+    except ZeroDivisionError:
+        result['average_nonexclusion_batch_time_seconds'] = None
     c.execute("select avg(strftime('%s',BatchStatusUpdateTime) -strftime('%s',AssignedTime) ) from main where BatchStatus=2 AND BatchContent IS NOT NULL")
     result['average_exclusion_batch_time_seconds'] = c.fetchone()[0]
     
@@ -216,7 +224,10 @@ def gen_stats():
     result['nonexclusion_batches_remaining'] = c.fetchone()[0]
     c.execute('SELECT count(*) FROM main WHERE BatchContent IS NULL')
     result['nonexclusion_batches_total'] = c.fetchone()[0]
-    result['nonexclusion_batches_completed_percent'] = (result['nonexclusion_batches_completed']/(result['nonexclusion_batches_total']))*100
+    try:
+        result['nonexclusion_batches_completed_percent'] = (result['nonexclusion_batches_completed']/(result['nonexclusion_batches_total']))*100
+    except ZeroDivisionError:
+        result['nonexclusion_batches_completed_percent'] = None
     try:
         result['nonexclusion_projected_hours_remaining_10_min_base'] = (result['nonexclusion_batches_remaining'])/(result['nonexclusion_batches_completed_last_10_minutes']*6)
     except ZeroDivisionError:
@@ -263,10 +274,16 @@ def gen_stats():
         result['exclusion_projected_hours_remaining_1_hour_base'] = None
         result['exclusion_projected_hours_remaining'] = None
     
-    result['exclusion_batches_completed_percent'] = (result['exclusions_completed']/(result['total_exclusions']))*100
+    try:
+        result['exclusion_batches_completed_percent'] = (result['exclusions_completed']/(result['total_exclusions']))*100
+    except ZeroDivisionError:
+        result['exclusion_batches_completed_percent'] = None
     
-    result['batches_completed_percent'] = (result['batches_completed']/(result['batches_total']))*100 #-(0.9*result['total_exclusions'])))*100
-    
+    try:
+        result['batches_completed_percent'] = (result['batches_completed']/(result['batches_total']))*100 #-(0.9*result['total_exclusions'])))*100
+    except ZeroDivisionError:
+        result['batches_completed_percent'] = None
+
     # try:
         # result['projected_hours_remaining_10_min_base'] = 
     # except:
@@ -289,8 +306,11 @@ def gen_stats():
         result['projected_hours_remaining_1_hour_base'] = None
         #result['projected_hours_remaining'] = None
     
-    result['projected_hours_remaining'] = ((result['average_exclusion_batch_time_seconds'] * result['exclusions_unassigned']) + (result['average_nonexclusion_batch_time_seconds'] * result['nonexclusion_batches_remaining']))/3600
-    
+    try:
+        result['projected_hours_remaining'] = ((result['average_exclusion_batch_time_seconds'] * result['exclusions_unassigned']) + (result['average_nonexclusion_batch_time_seconds'] * result['nonexclusion_batches_remaining']))/3600
+    except TypeError:
+        result['projected_hours_remaining'] = None
+
     c.execute('SELECT COUNT(*) FROM workers') 
     result['worker_count'] = c.fetchone()[0]
     c.execute("SELECT COUNT(*) FROM workers where LastAliveTime> datetime('now', '-10 minute')")
@@ -300,7 +320,10 @@ def gen_stats():
     
     c.execute("SELECT COUNT(*) FROM workers where LastAliveTime> datetime('now', '-1 hour') AND WorkerVersion=4")
     result['version_4_workers_last_hour'] = c.fetchone()[0]
-    result['percent_version_4_workers_last_hour'] = (result['version_4_workers_last_hour']/result['worker_count_last_hour'])*100
+    try:
+        result['percent_version_4_workers_last_hour'] = (result['version_4_workers_last_hour']/result['worker_count_last_hour'])*100
+    except ZeroDivisionError:
+        result['percent_version_4_workers_last_hour'] = None
     
     c.execute('SELECT COUNT(DISTINCT LastAliveIP) FROM workers') 
     result['worker_ip_count'] = c.fetchone()[0]

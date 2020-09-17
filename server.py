@@ -238,11 +238,6 @@ def gen_stats():
     except ZeroDivisionError:
         result['projected_hours_remaining_1_hour_base'] = None
         #result['projected_hours_remaining'] = None
-    
-    try:
-        result['projected_hours_remaining'] = ((result['average_exclusion_batch_time_seconds'] * result['exclusions_unassigned']) + (result['average_nonexclusion_batch_time_seconds'] * result['nonexclusion_batches_remaining']))/3600
-    except TypeError:
-        result['projected_hours_remaining'] = None
 
     c.execute('SELECT COUNT(*) FROM workers') 
     result['worker_count'] = c.fetchone()[0]

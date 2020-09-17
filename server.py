@@ -36,7 +36,7 @@ app = Flask(__name__)
 cache = Cache(app,config={'CACHE_TYPE': 'simple'})
 
 #DB Inititalization
-conn = sqlite3.connect('/dev/shm/dbfile.db')
+conn = sqlite3.connect('oper/dbfile.db')
 conn.isolation_level= None # turn on autocommit to increase concurency
 c = conn.cursor()
 
@@ -90,7 +90,7 @@ def assignBatch(id, ip, ver):
 	    ver = 0
     limit = 300#100#80#250#450
     batchsize = 250
-    batch_lock = fasteners.InterProcessLock('/dev/shm/batchassign_lock_file')
+    batch_lock = fasteners.InterProcessLock('oper/batchassign_lock_file')
     print('Requesting lock')
     gotten = batch_lock.acquire(blocking=True)
     print('Got lock')

@@ -1,3 +1,3 @@
-# blogspot-master
+# ytcc-server
 
-Task coordination server used for archiving Google+ Comments on Blogspot Blogs. See https://www.archiveteam.org/index.php?title=Google_Plus_Comments_on_Blogspot for details.
+Task coordination server used for archiving YouTube community-contributed captions and metadata drafts.

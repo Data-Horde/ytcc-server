@@ -195,13 +195,6 @@ def gen_stats():
     result = {}
     c.execute("select avg(strftime('%s',BatchStatusUpdateTime) -strftime('%s',AssignedTime) ) from main where BatchStatus=2")
     result['average_batch_time_seconds'] = c.fetchone()[0]
-    try:
-        c.execute("select avg(strftime('%s',BatchStatusUpdateTime) -strftime('%s',AssignedTime) ) from main where BatchStatus=2 AND BatchContent IS NULL")
-        result['average_nonexclusion_batch_time_seconds'] = c.fetchone()[0]
-    except ZeroDivisionError:
-        result['average_nonexclusion_batch_time_seconds'] = None
-    c.execute("select avg(strftime('%s',BatchStatusUpdateTime) -strftime('%s',AssignedTime) ) from main where BatchStatus=2 AND BatchContent IS NOT NULL")
-    result['average_exclusion_batch_time_seconds'] = c.fetchone()[0]
     
     c.execute('SELECT count(*) FROM main WHERE BatchStatus=1')
     result['batches_assigned'] = c.fetchone()[0]
@@ -211,33 +204,6 @@ def gen_stats():
     result['batches_completed_last_10_minutes'] = c.fetchone()[0]
     c.execute("SELECT count(*) FROM main WHERE BatchStatusUpdateTime> datetime('now', '-1 hour') and BatchStatus=2")
     result['batches_completed_last_hour'] = c.fetchone()[0]
-    
-    c.execute('SELECT count(*) FROM main WHERE BatchContent IS NULL AND BatchStatus=1')
-    result['nonexclusion_batches_assigned'] = c.fetchone()[0]
-    c.execute('SELECT count(*) FROM main WHERE BatchContent IS NULL AND BatchStatus=2')
-    result['nonexclusion_batches_completed'] = c.fetchone()[0]
-    c.execute("SELECT count(*) FROM main WHERE BatchContent IS NULL AND BatchStatusUpdateTime> datetime('now', '-10 minute') and BatchStatus=2")
-    result['nonexclusion_batches_completed_last_10_minutes'] = c.fetchone()[0]
-    c.execute("SELECT count(*) FROM main WHERE BatchContent IS NULL AND BatchStatusUpdateTime> datetime('now', '-1 hour') and BatchStatus=2")
-    result['nonexclusion_batches_completed_last_hour'] = c.fetchone()[0]
-    c.execute('SELECT count(*) FROM main WHERE BatchContent IS NULL AND (BatchStatus=0 OR BatchStatus=1)')
-    result['nonexclusion_batches_remaining'] = c.fetchone()[0]
-    c.execute('SELECT count(*) FROM main WHERE BatchContent IS NULL')
-    result['nonexclusion_batches_total'] = c.fetchone()[0]
-    try:
-        result['nonexclusion_batches_completed_percent'] = (result['nonexclusion_batches_completed']/(result['nonexclusion_batches_total']))*100
-    except ZeroDivisionError:
-        result['nonexclusion_batches_completed_percent'] = None
-    try:
-        result['nonexclusion_projected_hours_remaining_10_min_base'] = (result['nonexclusion_batches_remaining'])/(result['nonexclusion_batches_completed_last_10_minutes']*6)
-    except ZeroDivisionError:
-        result['nonexclusion_projected_hours_remaining_10_min_base'] = None
-    try:
-        result['nonexclusion_projected_hours_remaining_1_hour_base'] = (result['nonexclusion_batches_remaining'])/(result['nonexclusion_batches_completed_last_hour'])
-        result['nonexclusion_projected_hours_remaining'] = result['nonexclusion_projected_hours_remaining_1_hour_base'] #(result['average_batch_time_seconds'] * (result['nonexclusion_batches_remaining']-(0.9*result['total_exclusions'])))/3600
-    except ZeroDivisionError:
-        result['nonexclusion_projected_hours_remaining_1_hour_base'] = None
-        result['nonexclusion_projected_hours_remaining'] = None
     
     c.execute("SELECT count(BatchContent) FROM main WHERE BatchStatusUpdateTime> datetime('now', '-10 minute') and BatchStatus=2")
     result['exclusions_completed_last_10_minutes'] = c.fetchone()[0]
@@ -256,44 +222,11 @@ def gen_stats():
         result['total_data_size'] = 0
     result['total_data_size_pretty'] = size(result['total_data_size'], system=alternative)
     c.execute('SELECT count(BatchContent) FROM main')
-    result['total_exclusions'] = c.fetchone()[0]
-    c.execute('SELECT count(BatchContent) FROM main where BatchStatus=0')
-    result['exclusions_unassigned'] = c.fetchone()[0]
-    
-    c.execute('SELECT count(BatchContent) FROM main where BatchStatus=2')
-    result['exclusions_completed'] = c.fetchone()[0]
-    
-    try:
-        result['exclusion_projected_hours_remaining_10_min_base'] = (result['exclusions_unassigned'])/(result['exclusions_completed_last_10_minutes']*6)
-    except ZeroDivisionError:
-        result['exclusion_projected_hours_remaining_10_min_base'] = None
-    try:
-        result['exclusion_projected_hours_remaining_1_hour_base'] = (result['exclusions_unassigned'])/(result['exclusions_completed_last_hour'])
-        result['exclusion_projected_hours_remaining'] = result['exclusion_projected_hours_remaining_1_hour_base'] #(result['average_batch_time_seconds'] * (result['exclusion_batches_remaining']-(0.9*result['total_exclusions'])))/3600
-    except ZeroDivisionError:
-        result['exclusion_projected_hours_remaining_1_hour_base'] = None
-        result['exclusion_projected_hours_remaining'] = None
-    
-    try:
-        result['exclusion_batches_completed_percent'] = (result['exclusions_completed']/(result['total_exclusions']))*100
-    except ZeroDivisionError:
-        result['exclusion_batches_completed_percent'] = None
     
     try:
         result['batches_completed_percent'] = (result['batches_completed']/(result['batches_total']))*100 #-(0.9*result['total_exclusions'])))*100
     except ZeroDivisionError:
         result['batches_completed_percent'] = None
-
-    # try:
-        # result['projected_hours_remaining_10_min_base'] = 
-    # except:
-        # result['projected_hours_remaining_10_min_base'] = None
-    # try:
-        # result['projected_hours_remaining_1_hour_base'] = 
-        # result['projected_hours_remaining'] = result['projected_hours_remaining_1_hour_base'] #(result['average_batch_time_seconds'] * (result['batches_remaining']-(0.9*result['total_exclusions'])))/3600
-    # except:
-        # result['projected_hours_remaining_1_hour_base'] = None
-        # result['projected_hours_remaining'] = None
         
     try:
         result['projected_hours_remaining_10_min_base'] = (result['batches_remaining'])/(result['batches_completed_last_10_minutes']*6)

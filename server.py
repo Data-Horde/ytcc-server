@@ -195,16 +195,6 @@ def addtolist(list, id, batch, randomkey, item):
     c.execute('UPDATE main SET "'+str(list)+'"=? WHERE BatchID=?', ((str(splitter)+str(item)), str(batch)))
     return 'Success'
 
-def addcustom(item, domain):
-    c.execute('SELECT COUNT(*) from domains where blogspot=?', (str(item),))
-    if bool(c.fetchone()[0]):
-        return 'Dupe'
-    c.execute('SELECT COUNT(*) from domains where custom=?', (str(domain),))
-    if bool(c.fetchone()[0]):
-        return 'Dupe'
-    c.execute('INSERT into domains (blogspot, custom) VALUES(?,?)', (str(item),str(domain),))
-    return 'Success'
-
 def updatestatus(id, batch, randomkey, status, ip):
     c.execute('SELECT BatchStatus from main where BatchID=?', (batch,))
     ans = c.fetchall()[0][0]
@@ -284,8 +274,6 @@ def gen_stats():
     result['batches_remaining'] = c.fetchone()[0]
     c.execute('SELECT count(*) FROM main')
     result['batches_total'] = c.fetchone()[0]
-    c.execute('SELECT COUNT(*) from domains')
-    result['total_custom_domains'] = c.fetchone()[0]
     c.execute('SELECT sum(BatchSize) FROM main')
     try:
         result['total_data_size'] = c.fetchone()[0]
@@ -380,22 +368,6 @@ def give_batch():
     myj = {'batchID': batchid, 'randomKey': str(randomkey), 'offset': curroffset, 'limit': limit, 'assignmentType': dltype, 'content': content, 'batchSize': batchsize}
     myresp = Response(json.dumps(myj), mimetype='application/json')
     return myresp
-
-@app.route('/worker/submitDomain')
-def submit_domain(): #Parameters: id, batchID, randomKey, blog, domain
-    id = request.args.get('id', '')
-    batchid = request.args.get('batchID', '')
-    randomkey = request.args.get('randomKey', '')
-    target = request.args.get('blog', '')
-    customdomain = request.args.get('domain', '')
-    ip = request.remote_addr
-    if not verifylegitrequest(id, batchid, randomkey, ip):
-        return 'Fail'
-    if not target:
-        return 'Fail'
-    if not customdomain:
-        return 'Fail'
-    return(addcustom(target, customdomain))
 
 @app.route('/worker/updateStatus')
 def update_status(): #Parameters: id, batchID, randomKey, status ('a'=assigned,) 'c'=completed, 'f'=failed

@@ -1,5 +1,4 @@
 requests
-pydrive
 flask
 gunicorn
 Flask-Caching

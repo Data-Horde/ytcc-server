@@ -360,7 +360,7 @@ def dumpdb():
     with sqlite3.connect('backup.db') as bck:
         conn.backup(bck, pages=1)#, pages=1, progress=progress)
     # 9/17/2020: REIMPLEMENT THIS
-    return str(myul['id'])
+    return "not implemented" #str(myul['id'])
 
 @app.route('/wakemydyno.txt')
 def wake_registration():

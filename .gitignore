@@ -1,2 +1,4 @@
 __pycache__
 oper
+tmp_lock_file
+backup_quit.db

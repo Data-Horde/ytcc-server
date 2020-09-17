@@ -1,45 +1,12 @@
-import os, time, datetime, random, json, sqlite3, signal, uuid, csv, requests, pydrive, flask, fasteners
+import os, time, datetime, random, json, sqlite3, signal, uuid, csv, requests, flask, fasteners
 from time import sleep
 
 from hurry.filesize import size, alternative
-
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
 
 from multiprocessing import Lock
 from threading import Lock
 #Mutex lock used to prevent different workers getting the same batch id
 assignBatchLock = Lock()
-
-drive_lock = fasteners.InterProcessLock('/dev/shm/drive_lock_file')
-print('Requesting lock')
-gotten = drive_lock.acquire(blocking=True)
-print('Got lock')
-
-#AUTH to Google Drive
-gauth = GoogleAuth()
-
-gauth.LoadCredentialsFile("credentials.txt")
-if gauth.credentials is None:
-    gauth.LocalWebserverAuth()
-elif gauth.access_token_expired:
-    gauth.Refresh()
-else:
-    gauth.Authorize()
-
-gauth.SaveCredentialsFile("credentials.txt")
-
-drive = GoogleDrive(gauth)
-
-drive_lock.release()
-
-#infile = open('offset.csv', mode='r')
-#reader = csv.reader(infile)
-#offsets = dict((rows[0],rows[1]) for rows in reader)
-#infile.close()
-
-#mysf = drive.CreateFile({'id': '[id of file to be used]'})
-#mysf.GetContentFile('domains_list.txt')
 
 #sleep(15) #Safety cushion
 
@@ -96,11 +63,6 @@ class GracefulKiller:
             print('Gotten lock')
             with sqlite3.connect('backup_quit.db') as bck:
                 conn.backup(bck)#, pages=1, progress=progress)
-            #myul = drive.CreateFile({'title': 'db.db'})
-            #myul.SetContentFile('backup_quit.db')
-            #myul.Upload()
-            #heroku3.from_key(os.environ['heroku-key']).apps()['getblogspot-01'].config()['dbid'] = myul['id']
-            #del myul
             a_lock.release()
         print('Exiting...')    
         exit()
@@ -397,9 +359,7 @@ def dumpdb():
     #    print("The file does not exist")
     with sqlite3.connect('backup.db') as bck:
         conn.backup(bck, pages=1)#, pages=1, progress=progress)
-    myul = drive.CreateFile({'title': 'dbDUMP.db'})
-    myul.SetContentFile('backup.db')
-    myul.Upload()
+    # 9/17/2020: REIMPLEMENT THIS
     return str(myul['id'])
 
 @app.route('/wakemydyno.txt')

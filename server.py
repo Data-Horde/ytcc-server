@@ -381,47 +381,6 @@ def give_batch():
     myresp = Response(json.dumps(myj), mimetype='application/json')
     return myresp
 
-@app.route('/worker/submitExclusion')
-def submit_exclusion(): #Parameters: id, batchID, randomKey, exclusion
-    id = request.args.get('id', '')
-    batchid = request.args.get('batchID', '')
-    randomkey = request.args.get('randomKey', '')
-    target = request.args.get('exclusion', '')
-    ip = request.remote_addr
-    if not verifylegitrequest(id, batchid, randomkey, ip):
-        return 'Fail'
-    if not target:
-        return 'Fail'
-    return(addtolist("Excluded", id, batchid, randomkey, target))
-
-@app.route('/worker/submitDeleted')
-def submit_deleted(): #Parameters: id, batchID, randomKey, deleted
-    return 'Success'
-    # id = request.args.get('id', '')
-    # batchid = request.args.get('batchID', '')
-    # randomkey = request.args.get('randomKey', '')
-    # target = request.args.get('deleted', '')
-    # ip = request.remote_addr
-    # if not verifylegitrequest(id, batchid, randomkey, ip):
-        # return 'Fail'
-    # if not target:
-        # return 'Fail'
-    # return(addtolist("Deleted", id, batchid, randomkey, target))
-
-@app.route('/worker/submitPrivate')
-def submit_private(): #Parameters: id, batchID, randomKey, private
-    return 'Success'
-    # id = request.args.get('id', '')
-    # batchid = request.args.get('batchID', '')
-    # randomkey = request.args.get('randomKey', '')
-    # target = request.args.get('private', '')
-    # ip = request.remote_addr
-    # if not verifylegitrequest(id, batchid, randomkey, ip):
-        # return 'Fail'
-    # if not target:
-        # return 'Fail'
-    # return(addtolist("Privated", id, batchid, randomkey, target))
-
 @app.route('/worker/submitDomain')
 def submit_domain(): #Parameters: id, batchID, randomKey, blog, domain
     id = request.args.get('id', '')
@@ -456,14 +415,6 @@ def update_status(): #Parameters: id, batchID, randomKey, status ('a'=assigned,)
 @cache.cached(timeout=30)
 def get_stats():
     return Response(gen_stats(), mimetype='application/json')
-
-@app.route('/worker/domains.txt')
-def download_list():
-    return flask.send_file("domains_list.txt", mimetype='text/plain', as_attachment=True)
-
-@app.route('/worker/domains.txt.gz')
-def download_list_gz():
-    return flask.send_file("domains_list.txt.gz", mimetype='text/plain', as_attachment=True)
 
 @app.route('/internal/dumpdb')
 @cache.cached(timeout=300)

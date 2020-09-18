@@ -35,11 +35,6 @@ from flask_caching import Cache
 app = Flask(__name__)
 cache = Cache(app,config={'CACHE_TYPE': 'simple'})
 
-#DB Inititalization
-conn = sqlite3.connect('oper/dbfile.db')
-conn.isolation_level= None # turn on autocommit to increase concurency
-c = conn.cursor()
-
 #def progress(status, remaining, total):
 #    print(f'Copied {total-remaining} of {total} pages...')
 
@@ -51,6 +46,11 @@ class GracefulKiller:
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def exit_gracefully(self,signum, frame):
+        #DB Inititalization
+        conn = sqlite3.connect('oper/dbfile.db')
+        conn.isolation_level= None # turn on autocommit to increase concurency
+        c = conn.cursor()
+
         self.kill_now = True
         sleep(3)
         #if os.path.exists("backup_quit.db"):
@@ -70,20 +70,38 @@ class GracefulKiller:
 killer = GracefulKiller()
 
 def getworkers(id):
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
     c.execute('select count(WorkerID ) from workers where WorkerID =?', (id,))
     return c.fetchone()[0]>0 
 
 def addworker(ip, ver):
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
+
     desid = str(uuid.uuid5(uuid.NAMESPACE_URL, str(random.random())+str(random.random())+str(random.random())))#random.randint(1, 100000)#(myr[-1][0])+1
     c.execute('INSERT INTO "main"."workers"("WorkerID","CreatedTime","LastAliveTime","LastAliveIP","WorkerVersion") VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)', (desid,ip,ver,))
     complete = True
     return desid
 
 def workeralive(id, ip):
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
     c.execute('UPDATE workers SET LastAliveTime=CURRENT_TIMESTAMP, LastAliveIP=? WHERE WorkerID=?', (ip, str(id),))
     return
 
 def assignBatch(id, ip, ver):
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
+
     limit = 300#100#80#250#450
     batchsize = 250
     batch_lock = fasteners.InterProcessLock('oper/batchassign_lock_file')
@@ -130,6 +148,11 @@ def assignBatch(id, ip, ver):
         raise
         
 def addtolist(list, id, batch, randomkey, item):
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
+
     item = item.lower()
     c.execute('SELECT '+str(list)+' FROM main WHERE BatchID=?', (str(batch),))
     res = c.fetchall()[0][0]
@@ -150,6 +173,11 @@ def addtolist(list, id, batch, randomkey, item):
     return 'Success'
 
 def updatestatus(id, batch, randomkey, status, ip):
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
+
     c.execute('SELECT BatchStatus from main where BatchID=?', (batch,))
     ans = c.fetchall()[0][0]
     if str(ans) != '1':
@@ -167,6 +195,11 @@ def updatestatus(id, batch, randomkey, status, ip):
         return 'Success'
 
 def verifylegitrequest(id, batch, randomkey, ip):
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
+
     c.execute('SELECT * FROM main WHERE BatchStatus=1 AND WorkerKey=? AND BatchID=? AND RandomKey=?', (str(id),str(batch),str(randomkey),))
     res = bool(c.fetchall())
     if res:
@@ -175,6 +208,10 @@ def verifylegitrequest(id, batch, randomkey, ip):
 
 @cache.cached(timeout=300, key_prefix='purge_inactive_tasks')
 def reopenavailability():
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
     c.execute("update main set BatchStatus=0,AssignedTime=null where BatchStatusUpdateTime< datetime('now', '-2 hour') and BatchStatus=1") #Thanks @jopik
     return 'Success'
 
@@ -296,6 +333,11 @@ def get_stats():
 @app.route('/internal/dumpdb')
 @cache.cached(timeout=300)
 def dumpdb():
+    #DB Inititalization
+    conn = sqlite3.connect('oper/dbfile.db')
+    conn.isolation_level= None # turn on autocommit to increase concurency
+    c = conn.cursor()
+
     #if os.path.exists("backup.db"):
     #    os.remove("backup.db")
     #else:

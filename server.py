@@ -74,8 +74,6 @@ def getworkers(id):
     return c.fetchone()[0]>0 
 
 def addworker(ip, ver):
-    if ver == '':
-	    ver = 0
     desid = str(uuid.uuid5(uuid.NAMESPACE_URL, str(random.random())+str(random.random())+str(random.random())))#random.randint(1, 100000)#(myr[-1][0])+1
     c.execute('INSERT INTO "main"."workers"("WorkerID","CreatedTime","LastAliveTime","LastAliveIP","WorkerVersion") VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)', (desid,ip,ver,))
     complete = True
@@ -86,8 +84,6 @@ def workeralive(id, ip):
     return
 
 def assignBatch(id, ip, ver):
-    if ver == '':
-	    ver = 0
     limit = 300#100#80#250#450
     batchsize = 250
     batch_lock = fasteners.InterProcessLock('oper/batchassign_lock_file')
@@ -99,14 +95,10 @@ def assignBatch(id, ip, ver):
         #Mutex lock used to prevent different workers getting the same batch id
         with assignBatchLock:
                               #only one thread can execute here
-            if int(ver) != 0: #newer versions
-                c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 AND BatchContent IS NULL LIMIT 1')
-                datalist = c.fetchone()
-                if datalist == None:
-                    c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 LIMIT 1')
-                    datalist = c.fetchone()
-            else: #old versions, exclusions only
-                c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 AND BatchContent IS NOT NULL LIMIT 1')
+            c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 AND BatchContent IS NULL LIMIT 1')
+            datalist = c.fetchone()
+            if datalist == None:
+                c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 LIMIT 1')
                 datalist = c.fetchone()
             if datalist == None:
                 print('Releasing')

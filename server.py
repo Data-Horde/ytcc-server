@@ -112,12 +112,9 @@ def assignBatch(id, ip, ver):
         #reopenavailability()
         #Mutex lock used to prevent different workers getting the same batch id
         with assignBatchLock:
-                              #only one thread can execute here
-            c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 AND BatchContent IS NULL LIMIT 1')
+            #only one thread can execute here
+            c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 AND BatchContent IS NOT NULL LIMIT 1')
             datalist = c.fetchone()
-            if datalist == None:
-                c.execute('SELECT BatchID, BatchContent, RandomKey from main where BatchStatus=0 LIMIT 1')
-                datalist = c.fetchone()
             if datalist == None:
                 print('Releasing')
                 batch_lock.release()
@@ -131,16 +128,10 @@ def assignBatch(id, ip, ver):
             print('Releasing')
             batch_lock.release()
             myoffset=0
-            if datalist[1]:
-                dltype = "domain"
-                content = datalist[1]
-                limit = 0
-                batchsize = 1
-            else:
-                dltype = "list"
-                c.execute('SELECT BatchContent from batches where BatchID=?', (ans,))
-                content = str(c.fetchone()[0]).replace('\n', '')
-                myoffset = 0#offsets[str(ans)]
+            dltype = "list"
+            content = datalist[1]
+            limit = 0 # 9/18/2020: what is this?
+            batchsize = 1 # 9/18/2020: implement this?
         return ans, randomkey, myoffset, limit, dltype, content, batchsize
     except:
         print('Releasing')
@@ -185,12 +176,14 @@ def updatestatus(id, batch, randomkey, status, ip):
     else:
         numstatus = ['f', '', 'c'].index(status)
         if status == 'c':
-            myrdata = requests.get('http://blogstore.bot.nu/getVerifyBatchUnit?batchID='+str(batch)+'&batchKey='+str(randomkey))
-            if myrdata.status_code != 200:
-                return 'Fail'
-            size = int(myrdata.json()['size'])
-            c.execute('UPDATE main SET BatchStatus=?, BatchStatusUpdateTime=CURRENT_TIMESTAMP, BatchStatusUpdateIP=?, BatchSize=? WHERE BatchID=? AND RandomKey=? AND WorkerKey=?', (numstatus, ip, size, batch, str(randomkey), str(id),))
-            return 'Success'
+            pass
+            # 9/18/2020: TODO: Add batch verification and processing
+            #myrdata = requests.get('http://blogstore.bot.nu/getVerifyBatchUnit?batchID='+str(batch)+'&batchKey='+str(randomkey))
+            #if myrdata.status_code != 200:
+            #    return 'Fail'
+            #size = int(myrdata.json()['size'])
+            #c.execute('UPDATE main SET BatchStatus=?, BatchStatusUpdateTime=CURRENT_TIMESTAMP, BatchStatusUpdateIP=?, BatchSize=? WHERE BatchID=? AND RandomKey=? AND WorkerKey=?', (numstatus, ip, size, batch, str(randomkey), str(id),))
+            #return 'Success'
         c.execute('UPDATE main SET BatchStatus=?, BatchStatusUpdateTime=CURRENT_TIMESTAMP, BatchStatusUpdateIP=? WHERE BatchID=? AND RandomKey=? AND WorkerKey=?', (numstatus, ip, batch, str(randomkey),str(id),))
         return 'Success'
 

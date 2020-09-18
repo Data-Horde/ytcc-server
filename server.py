@@ -291,13 +291,13 @@ def gen_stats():
     return json.dumps(result)
     
     
-@app.route('/worker/getID')
+@app.route('/worker/getID') # Parameters: worker_version
 def give_id():
     ip = request.remote_addr
     ver = str(request.args.get('worker_version', ''))
     return str(addworker(ip, ver))
 
-@app.route('/worker/getBatch') #Parameters: id
+@app.route('/worker/getBatch') #Parameters: id, worker_version
 def give_batch():
     id = str(request.args.get('id', ''))
     ver = str(request.args.get('worker_version', ''))

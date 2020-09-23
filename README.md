@@ -1,3 +1,3 @@
 # ytcc-server
 
-Task coordination server used for archiving YouTube community-contributed captions and metadata drafts.
+The Archive Team item assignment server was used instead of this task coordination server for archiving YouTube community-contributed captions and titles/descriptions.
